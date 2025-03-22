@@ -1,8 +1,9 @@
 import asyncio
 
+from configs.logging_config import logger
+
 from database.database import BaseModel, engine
 from database.models import SpimexTradingResults  # noqa: F401
-from app.configs.logging_config import logger
 
 logger.info(f"Инициализация БД с таблицами: {BaseModel.metadata.tables.keys()}")
 

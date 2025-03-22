@@ -4,7 +4,7 @@ from typing import Any, Callable
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncAttrs, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
-from app.configs.config import settings
+from configs.config import settings
 
 DATABASE_URL = settings.get_db_postgres_url()
 # DATABASE_URL = settings.get_db_sqlite_url()
@@ -34,3 +34,8 @@ def async_context_session(func: Callable[..., Any]) -> Callable[..., Any]:
                 raise e
 
     return wrapper
+
+
+async def get_db():
+    async with AsyncSessionLocal() as db:
+        yield db

@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from app.configs.config import settings
+from configs.config import settings
 
 LOG_DIR = settings.BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
