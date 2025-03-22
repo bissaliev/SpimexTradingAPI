@@ -1,0 +1,16 @@
+[tool.ruff]
+
+line-length = 88
+
+[tool.ruff.lint]
+
+select = ["I"]
+
+fixable = ["ALL"]
+
+[tool.ruff.lint.isort]
+
+known-first-party = ["app", "database", "parsers", "utils", "logging_config", "exceptions", "config"]
+
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
+order-by-type = false

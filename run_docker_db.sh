@@ -1,0 +1,1 @@
+docker run --name async_bulletings --volume bul_data:/var/lib/postgresql/data --env-file ./.env -p 5432:5432 postgres
