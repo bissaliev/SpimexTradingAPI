@@ -10,7 +10,7 @@ fixable = ["ALL"]
 
 [tool.ruff.lint.isort]
 
-known-first-party = ["app", "database", "parsers", "utils", "logging_config", "exceptions", "config"]
+known-first-party = ["app", "database", "parsers", "utils", "logging_config", "exceptions", "configs", "api", "schemas"]
 
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 order-by-type = false
