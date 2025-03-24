@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
 
+    REDIS_HOST: str
+    REDIS_PORT: int
+    REDIS_DB: int
+    CACHE_PREFIX: str = "fastapi-cache"
+
     model_config = SettingsConfigDict(env_file=".env")
 
     def get_db_postgres_url(self):
