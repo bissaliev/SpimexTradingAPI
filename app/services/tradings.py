@@ -1,7 +1,9 @@
+from fastapi_cache.decorator import cache
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models import SpimexTradingResults
+from utils.redis_client import get_expiries
 
 
 class TradingService:
@@ -9,12 +11,14 @@ class TradingService:
         self.session = session
         self.model = SpimexTradingResults
 
+    @cache(expire=get_expiries())
     async def get_last_dates(self, limit: int = 10):
         async with self.session as session:
             stmt = select(self.model.date).distinct().order_by(self.model.date.desc()).limit(limit)
             results = await session.scalars(stmt)
-            return results
+            return results.all()
 
+    @cache(expire=get_expiries())
     async def filter(self, **filters: dict):
         async with self.session as session:
             stmt = select(self.model).limit(filters.get("limit", 10))
