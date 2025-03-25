@@ -6,12 +6,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     BASE_DIR: Path = Path(__file__).parent.parent
     POSTGRES_DB: str
-    DB_HOST: str
+    DB_HOST: str = "localhost"
     DB_PORT: str
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
 
-    REDIS_HOST: str
+    REDIS_HOST: str = "localhost"
     REDIS_PORT: int
     REDIS_DB: int
     CACHE_PREFIX: str = "fastapi-cache"
