@@ -1,0 +1,26 @@
+services:
+    db:
+        image: postgres
+        env_file:
+            - ./.env
+        volumes:
+            - postgres_data:/var/lib/postgresql/data/
+    web:
+        build: .
+        command: uvicorn main:app --host 0.0.0.0
+        env_file:
+            - ./.env
+        ports:
+            - 8000:8000
+        depends_on:
+            - db
+
+    redis:
+        image: redis:7-alpine
+        restart: always
+        volumes:
+            - redis_data:/data/
+
+volumes:
+    postgres_data:
+    redis_data:
