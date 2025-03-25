@@ -3,15 +3,17 @@ from typing import Annotated
 from fastapi import APIRouter, Depends
 
 from api.dependencies import TradingServiceDepends
-from schemas.params import DynamicParams, LastParams
+from schemas.params import DynamicParams, LastParams, LimitOffset
 from schemas.tradings import Trading, TradingLastDays
 
 router = APIRouter()
 
 
 @router.get("/last_trading_dates", summary="Список дат последних торговых дней")
-async def get_last_trading_dates(trading_service: TradingServiceDepends, limit: int = 10) -> TradingLastDays:
-    results = await trading_service.get_last_dates(limit=limit)
+async def get_last_trading_dates(
+    trading_service: TradingServiceDepends, params: Annotated[LimitOffset, Depends()]
+) -> TradingLastDays:
+    results = await trading_service.get_last_dates(**params.model_dump())
     return TradingLastDays(dates=results)
 
 

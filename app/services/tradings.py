@@ -12,16 +12,18 @@ class TradingService:
         self.model = SpimexTradingResults
 
     @cache(expire=get_expiries())
-    async def get_last_dates(self, limit: int = 10):
+    async def get_last_dates(self, offset: int = 0, limit: int = 10):
         async with self.session as session:
-            stmt = select(self.model.date).distinct().order_by(self.model.date.desc()).limit(limit)
+            stmt = select(self.model.date).distinct().order_by(self.model.date.desc()).offset(offset).limit(limit)
             results = await session.scalars(stmt)
             return results.all()
 
     @cache(expire=get_expiries())
     async def filter(self, **filters: dict):
         async with self.session as session:
-            stmt = select(self.model).limit(filters.get("limit", 10))
+            limit = filters.get("limit", 10)
+            offset = filters.get("offset", 0)
+            stmt = select(self.model)
             oil_id = filters.get("oil_id")
             delivery_type_id = filters.get("delivery_type_id")
             delivery_basis_id = filters.get("delivery_basis_id")
@@ -37,7 +39,7 @@ class TradingService:
                 stmt = stmt.where(self.model.date >= start_date)
             if end_date:
                 stmt = stmt.where(self.model.date <= end_date)
-            results = await session.scalars(stmt)
+            results = await session.scalars(stmt.limit(limit).offset(offset))
             return results.all()
 
     async def mass_create_trading(self, data: list[dict]):
