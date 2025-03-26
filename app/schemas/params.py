@@ -1,6 +1,6 @@
 from datetime import date
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LimitOffset(BaseModel):
@@ -9,9 +9,9 @@ class LimitOffset(BaseModel):
 
 
 class TradingParams(BaseModel):
-    oil_id: str | None = None
-    delivery_type_id: str | None = None
-    delivery_basis_id: str | None = None
+    oil_id: str | None = Field(None, min_length=4, max_length=4)
+    delivery_type_id: str | None = Field(None, min_length=1, max_length=1)
+    delivery_basis_id: str | None = Field(None, min_length=3, max_length=3)
 
 
 class DynamicParams(TradingParams):
