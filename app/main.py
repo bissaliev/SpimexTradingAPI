@@ -8,6 +8,15 @@ from utils.redis_client import init_redis
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Контекстный менеджер для управления жизненным циклом приложения.
+
+    Инициализирует подключение к Redis при запуске приложения
+    и закрывает его при завершении работы.
+
+    :param app: Экземпляр FastAPI.
+    """
+
     redis_client = await init_redis()
     yield
     await redis_client.close()
