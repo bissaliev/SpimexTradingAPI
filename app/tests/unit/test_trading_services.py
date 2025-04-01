@@ -1,21 +1,14 @@
 import operator
 from datetime import date
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import Mock
 
 import pytest
-import pytest_asyncio
 from services.tradings import TradingService
 from sqlalchemy import insert, select
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
 from tests.test_data import tradings
 
 from database.models import SpimexTradingResults
-
-
-@pytest_asyncio.fixture
-async def mock_session():
-    return AsyncMock(spec=AsyncSession)
 
 
 @pytest.mark.usefixtures("test_cache")

@@ -1,5 +1,6 @@
 from collections.abc import Generator
 from typing import Any
+from unittest.mock import AsyncMock
 
 import pytest
 import pytest_asyncio
@@ -10,12 +11,12 @@ from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from tests.dependencies import fake_service
+from tests.test_data import tradings
 
 from api.dependencies import trading_service
 from api.routers.tradings import router
 from database.database import BaseModel
-from tests.dependencies import fake_service
-from tests.test_data import tradings
 
 
 @pytest_asyncio.fixture
@@ -46,6 +47,12 @@ async def session(async_db_engine):
     async_session = sessionmaker(bind=async_db_engine, class_=AsyncSession)
     async with async_session() as session:
         yield session
+
+
+@pytest_asyncio.fixture
+async def mock_session():
+    """Мок-сессия"""
+    return AsyncMock(spec=AsyncSession)
 
 
 def start_application():
