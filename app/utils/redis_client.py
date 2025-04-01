@@ -30,7 +30,7 @@ async def init_redis() -> aioredis.Redis:
     return redis_client
 
 
-async def get_expiries() -> int:
+def get_expiries() -> int:
     """
     Рассчитывает время (в секундах) до ближайшего сброса кэша в 14:11.
 
