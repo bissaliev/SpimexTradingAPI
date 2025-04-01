@@ -1,0 +1,13 @@
+services:
+    db_test:
+        image: postgres
+        env_file:
+            - ./.env.test
+        ports:
+            - 5433:5432
+
+    redis_test:
+        image: redis:7-alpine
+        ports:
+            - 6378:6379
+        restart: always
