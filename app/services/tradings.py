@@ -32,10 +32,9 @@ class TradingService:
         :param limit: Количество записей в выборке (по умолчанию 10).
         :return: Список последних дат торгов.
         """
-        async with self.session as session:
-            stmt = select(self.model.date).distinct().order_by(self.model.date.desc()).offset(offset).limit(limit)
-            results = await session.scalars(stmt)
-            return results.all()
+        stmt = select(self.model.date).distinct().order_by(self.model.date.desc()).offset(offset).limit(limit)
+        results = await self.session.scalars(stmt)
+        return results.all()
 
     @cache(expire=get_expiries())
     async def filter(self, **filters: dict[str, Any]) -> list[SpimexTradingResults]:
@@ -47,24 +46,21 @@ class TradingService:
         ).
         :return: Список отфильтрованных записей.
         """
-        async with self.session as session:
-            stmt = select(self.model)
-
-            if oil_id := filters.get("oil_id"):
-                stmt = stmt.where(self.model.oil_id == oil_id)
-            if delivery_type_id := filters.get("delivery_type_id"):
-                stmt = stmt.where(self.model.delivery_type_id == delivery_type_id)
-            if delivery_basis_id := filters.get("delivery_basis_id"):
-                stmt = stmt.where(self.model.delivery_basis_id == delivery_basis_id)
-            if start_date := filters.get("start_date"):
-                stmt = stmt.where(self.model.date >= start_date)
-            if end_date := filters.get("end_date"):
-                stmt = stmt.where(self.model.date <= end_date)
-
-            limit = filters.get("limit", 10)
-            offset = filters.get("offset", 0)
-            results = await session.scalars(stmt.limit(limit).offset(offset))
-            return results.all()
+        stmt = select(self.model)
+        if oil_id := filters.get("oil_id"):
+            stmt = stmt.where(self.model.oil_id == oil_id)
+        if delivery_type_id := filters.get("delivery_type_id"):
+            stmt = stmt.where(self.model.delivery_type_id == delivery_type_id)
+        if delivery_basis_id := filters.get("delivery_basis_id"):
+            stmt = stmt.where(self.model.delivery_basis_id == delivery_basis_id)
+        if start_date := filters.get("start_date"):
+            stmt = stmt.where(self.model.date >= start_date)
+        if end_date := filters.get("end_date"):
+            stmt = stmt.where(self.model.date <= end_date)
+        limit = filters.get("limit", 10)
+        offset = filters.get("offset", 0)
+        results = await self.session.scalars(stmt.limit(limit).offset(offset))
+        return results.all()
 
     async def mass_create_trading(self, data: list[dict]) -> None:
         """
@@ -72,5 +68,4 @@ class TradingService:
 
         :param data: Список словарей с данными для вставки.
         """
-        async with self.session as session:
-            await session.execute(insert(SpimexTradingResults), data)
+        await self.session.execute(insert(SpimexTradingResults), data)
