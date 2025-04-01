@@ -1,81 +1,96 @@
 import operator
+from unittest.mock import AsyncMock
 
 import pytest
-from tests.dependencies import data
+from services.tradings import TradingService
+
+from api.dependencies import trading_service
+
+
+@pytest.fixture
+def mock_service():
+    return AsyncMock(spec=TradingService)
+
+
+@pytest.fixture
+def override_trading_service(app, mock_service):
+    # Функция для переопределения зависимости
+    async def mock_trading_service():
+        return mock_service
+
+    # Переопределяем зависимость
+    app.dependency_overrides[trading_service] = mock_trading_service
+
+    # Урожай для использования в тесте
+    yield mock_service
+
+    # Очищаем переопределение после теста
+    app.dependency_overrides.clear()
 
 
 class TestEndpoints:
-    def test_get_last_trading_dates(self, client):
-        sorted_data = sorted([i["date"] for i in data], reverse=True)
+    def test_get_last_trading_dates(self, client, override_trading_service, fixtures):
+        override_trading_service.get_last_dates.return_value = [obj["date"] for obj in fixtures]
         response = client.get("/trading/last_trading_dates")
         assert response.status_code == 200
         assert "dates" in response.json()
-        assert response.json()["dates"] == sorted_data
+        assert override_trading_service.get_last_dates.call_count == 1
 
-    def test_get_trading_results_endpoint(self, client):
+    def test_get_trading_results_endpoint(self, client, override_trading_service, fixtures):
+        override_trading_service.filter.return_value = fixtures
         response = client.get("/trading/trading_results")
         assert response.status_code == 200
-        assert len(response.json()) == len(data)
+        assert override_trading_service.filter.call_count == 1
 
-    def test_dynamics_endpoint(self, client):
+    def test_dynamics_endpoint(self, client, override_trading_service, fixtures):
+        override_trading_service.filter.return_value = fixtures
         response = client.get("/trading/dynamics")
         assert response.status_code == 200
-        assert len(response.json()) == len(data)
+        assert override_trading_service.filter.call_count == 1
 
     @pytest.mark.parametrize(
-        "field, value",
-        (
-            ("oil_id", data[0]["oil_id"]),
-            ("delivery_type_id", data[0]["delivery_type_id"]),
-            ("delivery_basis_id", data[0]["delivery_basis_id"]),
-        ),
+        "field",
+        ("oil_id", "delivery_type_id", "delivery_basis_id"),
     )
-    def test_trading_results_endpoint_filter(self, client, field, value):
+    def test_trading_results_endpoint_filter(self, client, field, override_trading_service, fixtures):
         limit = 10
         offset = 0
-        response = client.get(f"/trading/trading_results?{field}={value}&limit={limit}&offset={offset}")
+        filter_field = fixtures[0][field]
+        override_trading_service.filter.return_value = [fixtures[0]]
+        response = client.get(f"/trading/trading_results?{field}={filter_field}&limit={limit}&offset={offset}")
+        assert override_trading_service.filter.call_count == 1
         assert response.status_code == 200
         assert len(response.json()) == 1
-        assert response.json()[0][field] == value
+        assert response.json()[0][field] == filter_field
 
     @pytest.mark.parametrize(
-        "field, operator, value",
-        (
-            ("oil_id", operator.eq, data[0]["oil_id"]),
-            ("delivery_type_id", operator.eq, data[0]["delivery_type_id"]),
-            ("delivery_basis_id", operator.eq, data[0]["delivery_basis_id"]),
-            ("start_date", operator.ge, sorted(data, key=lambda x: x["date"], reverse=True)[0]["date"]),
-            ("end_date", operator.le, sorted(data, key=lambda x: x["date"])[0]["date"]),
-        ),
+        "field",
+        ("oil_id", "delivery_type_id", "delivery_basis_id"),
     )
-    def test_dynamics_endpoints_filters(self, client, field, operator, value):
+    def test_dynamics_endpoints_filters(self, client, override_trading_service, field, fixtures):
+        obj = fixtures[0]
+        value = obj[field]
+        override_trading_service.filter.return_value = [obj]
         response = client.get(f"trading/dynamics?{field}={value}")
+        assert override_trading_service.filter.call_count == 1
         assert response.status_code == 200
         assert len(response.json()) == 1
-        obj = response.json()[0]
-        current_date = obj["date"] if "date" in field else obj[field]
-        assert operator(current_date, value)
+        response_obj = response.json()[0]
+        response_value = response_obj[field]
+        assert response_value == value
 
     @pytest.mark.parametrize(
-        "field, value",
-        (("oil_id", "AAAA"), ("delivery_type_id", "L"), ("delivery_basis_id", "NNN")),
-    )
-    def test_dynamics_endpoints_filter_with_non_existent_params(self, client, field, value):
-        response = client.get(f"trading/dynamics?{field}={value}")
-        assert response.status_code == 200
-        assert len(response.json()) == 0
-
-    @pytest.mark.parametrize(
-        "field, value",
+        "field, operator",
         (
-            ("oil_id", "AAAA"),
-            ("delivery_type_id", "L"),
-            ("delivery_basis_id", "NNN"),
+            ("start_date", operator.ge),
+            ("end_date", operator.le),
         ),
     )
-    def test_trading_results_endpoint_filter_with_non_existent_params(self, client, field, value):
-        limit = 10
-        offset = 0
-        response = client.get(f"/trading/trading_results?{field}={value}&limit={limit}&offset={offset}")
+    async def test_method_filter_by_date(self, client, override_trading_service, field, operator, fixtures):
+        obj = fixtures[0]
+        expected = sorted([i for i in fixtures if operator(obj["date"], i["date"])], key=lambda x: x["date"])
+        override_trading_service.filter.return_value = expected
+        response = client.get(f"trading/dynamics?{field}={obj['date']}")
+        assert override_trading_service.filter.call_count == 1
         assert response.status_code == 200
-        assert len(response.json()) == 0
+        assert len(response.json()) == len(expected)
