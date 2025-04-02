@@ -3,11 +3,12 @@ import time
 from datetime import date, datetime
 
 from aiohttp import ClientSession, TCPConnector
+from services.tradings import TradingService
 from sqlalchemy.exc import SQLAlchemyError
 
-from database.crud import mass_create_trade
+from configs.logging_config import logger
+from database.database import AsyncSessionLocal
 from exceptions import XLSExtractorError
-from app.configs.logging_config import logger
 from parsers.parser import Parser
 from parsers.scraper import fetch_file, fetch_page
 from utils.file_utils import XLSExtractor
@@ -33,14 +34,16 @@ async def download_data(session: ClientSession, url: str, bidding_date: date, se
         logger.info(f"Данные готовы к загрузке в БД для даты {bidding_date}")
         # Сохраняем данные в БД
         async with semaphore:
-            await mass_create_trade(data)
+            async with AsyncSessionLocal() as db:
+                service = TradingService(db)
+                await service.mass_create_trading(data)
             logger.info(f"Данные загружены в БД с торгами {bidding_date}")
     except XLSExtractorError as e:
-        logger.error(e)
+        logger.error(e, exc_info=True)
     except SQLAlchemyError as e:
-        logger.error(f"Ошибка при сохранении данных б БД: {e}")
+        logger.error(f"Ошибка при сохранении данных б БД: {e}", exc_info=True)
     except Exception as e:
-        logger.error(f"Неизвестная ошибка: {e}")
+        logger.error(f"Неизвестная ошибка при загрузке данных: {e}", exc_info=True)
 
 
 async def process_page(session: ClientSession, page: int, semaphore: asyncio.Semaphore):

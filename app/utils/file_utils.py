@@ -5,8 +5,8 @@ from typing import Any
 
 import pandas as pd
 
+from configs.logging_config import logger
 from exceptions import XLSExtractorError
-from app.configs.logging_config import logger
 
 
 class XLSExtractor:

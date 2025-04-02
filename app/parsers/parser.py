@@ -4,7 +4,7 @@ from datetime import date
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 
-from app.configs.logging_config import logger
+from configs.logging_config import logger
 
 
 class Parser:

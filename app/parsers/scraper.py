@@ -2,7 +2,7 @@ import io
 
 import aiohttp
 
-from app.configs.logging_config import logger
+from configs.logging_config import logger
 
 
 async def fetch_page(session: aiohttp.ClientSession, url: str, params=None) -> str | None:
