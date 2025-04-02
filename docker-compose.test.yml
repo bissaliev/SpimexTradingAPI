@@ -1,13 +1,15 @@
 services:
     db_test:
         image: postgres
-        env_file:
-            - ./.env.test
+        environment:
+            POSTGRES_DB: test_db
+            POSTGRES_USER: tester
+            POSTGRES_PASSWORD: testing
+
         ports:
-            - 5433:5432
+            - "5433:5432"
 
     redis_test:
         image: redis:7-alpine
         ports:
-            - 6378:6379
-        restart: always
+            - "6378:6379"
