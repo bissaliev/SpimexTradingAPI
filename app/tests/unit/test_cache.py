@@ -28,13 +28,13 @@ class TestCacheUnit:
     """Тестируем работу кеша для TradingService"""
 
     @pytest.mark.parametrize("method", ("get_last_dates", "filter"))
-    async def test_work_cache(self, method, test_cache, mock_session, fixtures):
+    async def test_work_cache(self, method, test_cache, mock_session, tradings_list):
         """
         Тестируем что кеш сохраняется с корректным временем жизни
         и отдает данные при следующих запросах из кеша до 14.11
         """
         mock_result = Mock()
-        mock_result.all.return_value = fixtures
+        mock_result.all.return_value = tradings_list
         mock_session.scalars.return_value = mock_result
         trading_service = TradingService(mock_session)
         await getattr(trading_service, method)()
