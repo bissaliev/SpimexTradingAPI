@@ -1,5 +1,6 @@
 import operator
-from unittest.mock import Mock
+from typing import Any
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 from services.tradings import TradingService
@@ -9,12 +10,15 @@ from sqlalchemy.exc import SQLAlchemyError
 from database.models import SpimexTradingResults
 
 
-@pytest.mark.usefixtures("test_cache")
+@pytest.mark.usefixtures("test_redis_cache")
 class TestTradingServiceRead:
+    """Тесты для методов чтения из сервиса TradingService."""
+
     trading_service = TradingService
 
-    async def test_get_last_dates(self, mock_session, tradings_list):
-        dates_list = [obj["date"] for obj in tradings_list]
+    async def test_get_last_trading_dates(self, mock_session: AsyncMock, trading_data: list[dict[str, Any]]):
+        """Проверяет получение списка последних торговых дат."""
+        dates_list = [obj["date"] for obj in trading_data]
         trading_service = self.trading_service(mock_session)
         mock_result = Mock()
         mock_result.all.return_value = dates_list
@@ -30,14 +34,14 @@ class TestTradingServiceRead:
         actual_call = mock_session.scalars.call_args[0][0]
         assert str(actual_call) == str(expected_stmt)
 
-    async def test_filter(self, tradings_list, mock_session):
-        """Проверка метода get_last_dates"""
+    async def test_filter_without_params(self, mock_session: AsyncMock, trading_data: list[dict[str, Any]]):
+        """Проверяет фильтрацию данных без параметров."""
         mock_result = Mock()
-        mock_result.all.return_value = tradings_list
+        mock_result.all.return_value = trading_data
         mock_session.scalars.return_value = mock_result
         trading_service = self.trading_service(mock_session)
         response = await trading_service.filter()
-        assert len(response) == len(tradings_list)
+        assert len(response) == len(trading_data)
         assert mock_session.scalars.call_count == 1
         assert mock_result.all.call_count == 1
         expected_stmt = select(SpimexTradingResults).limit(10).offset(0)
@@ -48,8 +52,9 @@ class TestTradingServiceRead:
         "field",
         ("oil_id", "delivery_basis_id", "delivery_type_id"),
     )
-    async def test_method_filter_with_params(self, mock_session, field, tradings_list):
-        obj = tradings_list[0]
+    async def test_filter_with_params(self, mock_session: AsyncMock, trading_data: list[dict[str, Any]], field: str):
+        """Проверяет фильтрацию по указанному полю."""
+        obj = trading_data[0]
         query_data = obj[field]
         mock_result = Mock()
         mock_result.all.return_value = [obj]
@@ -72,10 +77,13 @@ class TestTradingServiceRead:
             ("end_date", operator.le),
         ),
     )
-    async def test_method_filter_by_date(self, mock_session, field, operator, tradings_list):
+    async def test_filter_by_date_range(
+        self, mock_session: AsyncMock, trading_data: list[dict[str, Any]], field: str, operator
+    ):
+        """Проверяет фильтрацию данных по диапазону дат."""
         mock_result = Mock()
-        obj = tradings_list[0]
-        expected = sorted([i for i in tradings_list if operator(i["date"], obj["date"])], key=lambda x: x["date"])
+        obj = trading_data[0]
+        expected = sorted([i for i in trading_data if operator(i["date"], obj["date"])], key=lambda x: x["date"])
         mock_result.all.return_value = expected
         mock_session.scalars.return_value = mock_result
         service = self.trading_service(mock_session)
@@ -99,7 +107,8 @@ class TestTradingServiceRead:
             ("end_date", "2000-12-12"),
         ),
     )
-    async def test_method_filter_with_invalid_params(self, mock_session, field, value):
+    async def test_filter_with_invalid_params(self, mock_session: AsyncMock, field: str, value: Any):
+        """Проверяет фильтрацию по указанному полю с невалидными данными."""
         mock_session.scalars.side_effect = SQLAlchemyError()
         service = self.trading_service(mock_session)
         with pytest.raises(SQLAlchemyError):
@@ -108,13 +117,14 @@ class TestTradingServiceRead:
 
 
 class TestTradingServiceWrite:
-    """Тестирование сохранения данных в БД сервисов TradingService"""
+    """Тесты для методов записи в базу данных через TradingService."""
 
     trading_service = TradingService
 
-    async def test_method_mass_create_trading(self, mock_session, tradings_list):
+    async def test_mass_create_trading(self, mock_session: AsyncMock, trading_data: list[dict[str, Any]]):
+        """Проверяет массовую вставку данных о торгах."""
         trading_service = self.trading_service(mock_session)
-        await trading_service.mass_create_trading(tradings_list)
+        await trading_service.mass_create_trading(trading_data)
 
         # Проверяем, что execute был вызван один раз с правильными аргументами
         assert mock_session.execute.call_count == 1
