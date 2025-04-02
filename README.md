@@ -54,6 +54,8 @@ Spimex Trading API — это микросервисное приложение,
 - `/app/fixtures.json` - Фикстуры для тестирования API
 - `/app/parser_main.py` - Главный модуль для запуска парсинга
 - `/app/main.py` - Главный модуль FastAPI
+- `/app/tests/` - Директория тестов
+- `pytest.ini` - Настройки `Pytest`
 
 ## Запуск
 
@@ -82,4 +84,39 @@ Spimex Trading API — это микросервисное приложение,
 
     ```bash
     docker compose exec web python3 load_data.py
+    ```
+
+## Тестирование
+
+Проект использует библиотеку Pytest для тестирования проекта. Для некоторых тестов понадобится тестовая база данных, развернутая в контейнерах.
+Для того чтобы запустить тесты подключите контейнеры для `PostgreSQL` и `Redis`.
+
+- Выполните команду по запуске контейнеров:
+
+    ```bash
+    docker compose -f docker-compose.test.yml up --build -d
+    ```
+
+  - Или выполните команду makefile:
+
+    ```bash
+    make up
+    ```
+
+- Выполните запуск тестов командой:
+
+    ```bash
+    pytest
+    ```
+
+- Чтобы остановить контейнеры выполните команду:
+
+    ```bash
+    docker compose -f docker-compose.test.yml down -v
+    ```
+
+  - Или выполните команду makefile:
+
+    ```bash
+    make down
     ```
